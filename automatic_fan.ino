@@ -31,7 +31,7 @@ float rataSuhu = 0;
 const int jumlahData = 10;
 
 // batas suhu fan aktif
-const int batasSuhu = 25;
+const int batasSuhu = 30; 
 
 // batas cahaya LDR
 const int batasCahaya = 500;
