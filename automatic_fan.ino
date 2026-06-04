@@ -6,8 +6,8 @@
 // KONFIGURASI PIN
 // ======================
 
-#define DHTPIN 2
-#define DHTTYPE DHT11      // Wokwi pakai DHT22
+#define DHTPIN 5
+#define DHTTYPE DHT11
 
 #define LDR_PIN A0
 #define RELAY_PIN 8
@@ -17,7 +17,6 @@
 // ======================
 
 DHT dht(DHTPIN, DHTTYPE);
-
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // ======================
@@ -27,34 +26,24 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 float totalSuhu = 0;
 float rataSuhu = 0;
 
-// jumlah pembacaan suhu
 const int jumlahData = 10;
-
-// batas suhu fan aktif
-const int batasSuhu = 30; 
-
-// batas cahaya LDR
+const int batasSuhu = 25;
 const int batasCahaya = 500;
 
 void setup() {
 
   Serial.begin(9600);
 
-  // mulai sensor DHT
   dht.begin();
 
-  // mulai LCD
   lcd.init();
   lcd.backlight();
 
-  // relay sebagai output
   pinMode(RELAY_PIN, OUTPUT);
 
-  // relay OFF awal
-  // relay module active LOW
-  digitalWrite(RELAY_PIN, HIGH);
+  // Relay OFF saat awal
+  digitalWrite(RELAY_PIN, LOW);
 
-  // tampilan awal LCD
   lcd.setCursor(0, 0);
   lcd.print("Automatic Fan");
 
@@ -71,7 +60,7 @@ void loop() {
   totalSuhu = 0;
 
   // ======================
-  // PEMBACAAN SUHU REALTIME
+  // AMBIL 10 DATA SUHU
   // ======================
 
   for (int i = 0; i < jumlahData; i++) {
@@ -80,44 +69,21 @@ void loop() {
 
     if (!isnan(suhu)) {
 
-      // jumlahkan suhu
       totalSuhu += suhu;
 
-      // rata-rata sementara
-      rataSuhu = totalSuhu / (i + 1);
-
-      // tampil serial monitor
+      // SERIAL MONITOR
       Serial.print("Suhu ke-");
       Serial.print(i + 1);
       Serial.print(": ");
       Serial.println(suhu);
 
-      // ======================
-      // FAN REALTIME
-      // ======================
-
-      // jika suhu realtime >= 30
-      // fan langsung nyala sementara
-
-      if (suhu >= batasSuhu) {
-
-        // relay ON
-        digitalWrite(RELAY_PIN, LOW);
-
-      } else {
-
-        // relay OFF
-        digitalWrite(RELAY_PIN, HIGH);
-      }
-
-      // ======================
       // LCD REALTIME
-      // ======================
-
       lcd.clear();
 
       lcd.setCursor(0, 0);
-      lcd.print("Temp:");
+      lcd.print("T");
+      lcd.print(i + 1);
+      lcd.print(":");
       lcd.print(suhu);
       lcd.print((char)223);
       lcd.print("C");
@@ -125,33 +91,28 @@ void loop() {
       lcd.setCursor(0, 1);
 
       if (suhu >= batasSuhu) {
-
         lcd.print("FAN ON");
-
       } else {
-
         lcd.print("FAN OFF");
       }
 
     } else {
 
       Serial.println("Gagal baca DHT");
-
-      // ulang pembacaan jika gagal
       i--;
     }
 
-    delay(5000);
+    delay(2000); 
   }
 
   // ======================
-  // HITUNG RATA-RATA FINAL
+  // HITUNG RATA-RATA
   // ======================
 
   rataSuhu = totalSuhu / jumlahData;
 
   // ======================
-  // BACA SENSOR LDR
+  // BACA LDR
   // ======================
 
   int nilaiLDR = analogRead(LDR_PIN);
@@ -159,35 +120,25 @@ void loop() {
   String kondisiCahaya;
 
   if (nilaiLDR < batasCahaya) {
-
     kondisiCahaya = "TERANG";
-
   } else {
-
     kondisiCahaya = "GELAP";
   }
 
   // ======================
-  // KEPUTUSAN FINAL FAN
+  // KEPUTUSAN FAN BERDASARKAN RATA-RATA
   // ======================
-
-  // fan aktif jika rata-rata suhu >= 30
 
   bool fanNyala = (rataSuhu >= batasSuhu);
 
   if (fanNyala) {
-
-    // relay ON
-    digitalWrite(RELAY_PIN, LOW);
-
-  } else {
-
-    // relay OFF
     digitalWrite(RELAY_PIN, HIGH);
+  } else {
+    digitalWrite(RELAY_PIN, LOW);
   }
 
   // ======================
-  // LCD FINAL
+  // LCD HASIL AKHIR
   // ======================
 
   lcd.clear();
@@ -201,19 +152,19 @@ void loop() {
   lcd.setCursor(0, 1);
 
   if (fanNyala) {
-
     lcd.print("FAN ON ");
-
   } else {
-
-    lcd.print("FAN OFF ");
+    lcd.print("FAN OFF");
   }
 
+  lcd.print(" ");
   lcd.print(kondisiCahaya);
 
   // ======================
-  // SERIAL MONITOR FINAL
+  // SERIAL MONITOR AKHIR
   // ======================
+
+  Serial.println();
 
   Serial.print("Rata-rata Suhu: ");
   Serial.println(rataSuhu);
@@ -225,15 +176,14 @@ void loop() {
   Serial.println(kondisiCahaya);
 
   if (fanNyala) {
-
     Serial.println("FAN ON");
-
   } else {
-
     Serial.println("FAN OFF");
   }
 
   Serial.println("====================");
 
-  delay(2000);
+  delay(5000);
 }
+
+
